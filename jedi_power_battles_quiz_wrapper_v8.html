@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Jedi Power Battles Quiz Wrapper v3</title>
+<style>
+  :root{
+    --bg1:#020814;
+    --bg2:#061a35;
+    --panel:#071527;
+    --line:#214a88;
+    --text:#f5f7fb;
+    --muted:#b8c7df;
+    --accent:#8ec5ff;
+    --good:#78f0a7;
+    --bad:#ff8b8b;
+    --gold:#ffd77a;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:Arial, Helvetica, sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(circle at top, #0a2e5c 0%, #051121 35%, #01060d 100%);
+  }
+  .app{
+    max-width:1320px;
+    margin:14px auto;
+    padding:10px;
+  }
+  .topbar{
+    display:grid;
+    grid-template-columns:repeat(4, minmax(0,1fr));
+    gap:14px;
+    margin-bottom:14px;
+  }
+  .stat{
+    background:linear-gradient(180deg, rgba(2,14,31,.96), rgba(4,15,32,.88));
+    border:1px solid var(--line);
+    border-radius:20px;
+    min-height:126px;
+    padding:16px 18px;
+    box-shadow:0 8px 24px rgba(0,0,0,.28);
+  }
+  .stat .label{
+    font-size:14px;
+    letter-spacing:2px;
+    color:var(--accent);
+    text-transform:uppercase;
+  }
+  .stat .value{
+    margin-top:10px;
+    font-size:52px;
+    font-weight:800;
+  }
+  .layout{
+    display:grid;
+    grid-template-columns:minmax(0,1.75fr) minmax(320px,.85fr);
+    gap:14px;
+  }
+  .panel{
+    background:linear-gradient(180deg, rgba(3,13,28,.96), rgba(6,18,38,.92));
+    border:1px solid var(--line);
+    border-radius:22px;
+    overflow:hidden;
+    box-shadow:0 12px 30px rgba(0,0,0,.3);
+  }
+  .panelHeader{
+    padding:20px 20px 10px;
+  }
+  .panelHeader h1{
+    margin:0 0 8px;
+    font-size:24px;
+  }
+  .panelHeader p{
+    margin:0;
+    color:var(--muted);
+    line-height:1.45;
+    font-size:15px;
+  }
+  .gameWrap{
+    position:relative;
+    margin:12px 18px 18px;
+    border:1px solid #163a72;
+    border-radius:18px;
+    overflow:hidden;
+    min-height:720px;
+    background:#000;
+  }
+  .gameWrap.quiz-open iframe{
+    filter:blur(2px) brightness(.45);
+    transform:scale(1.01);
+  }
+  iframe{
+    display:block;
+    width:100%;
+    height:720px;
+    border:0;
+    background:#000;
+    transition:filter .18s ease, transform .18s ease;
+  }
+  .overlay{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(2,7,15,.80);
+    backdrop-filter:blur(3px);
+    z-index:5;
+    padding:28px;
+  }
+  .overlay.hidden{display:none}
+  .card{
+    width:min(880px, 96%);
+    background:linear-gradient(180deg, rgba(4,16,33,.98), rgba(6,20,40,.98));
+    border:1px solid #2a5ea9;
+    border-radius:24px;
+    padding:26px;
+    box-shadow:0 16px 40px rgba(0,0,0,.4);
+  }
+  .eyebrow{
+    color:var(--gold);
+    text-transform:uppercase;
+    letter-spacing:2px;
+    font-size:13px;
+    font-weight:700;
+    margin-bottom:10px;
+  }
+  .title{
+    font-size:34px;
+    font-weight:800;
+    margin:0 0 10px;
+  }
+  .sub{
+    color:var(--muted);
+    line-height:1.55;
+    font-size:17px;
+    margin:0 0 18px;
+  }
+  .hint{
+    color:var(--accent);
+    font-weight:700;
+  }
+  .questionMeta{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    margin:0 0 14px;
+  }
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    border:1px solid #2a5ea9;
+    border-radius:999px;
+    padding:8px 12px;
+    color:#d9e8ff;
+    font-size:13px;
+    background:rgba(16,42,80,.35);
+  }
+  .questionText{
+    font-size:28px;
+    font-weight:800;
+    line-height:1.35;
+    margin:0 0 16px;
+  }
+  .answers{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:12px;
+    margin:18px 0 12px;
+  }
+  .answerBtn{
+    text-align:left;
+    width:100%;
+    border:1px solid #2a5ea9;
+    background:rgba(8,27,53,.95);
+    color:#f5f7fb;
+    padding:16px 18px;
+    border-radius:16px;
+    font-size:18px;
+    cursor:pointer;
+    transition:transform .12s ease, background .12s ease, border-color .12s ease;
+  }
+  .answerBtn:hover{transform:translateY(-1px); background:rgba(15,39,72,.98)}
+  .answerBtn:disabled{opacity:.82; cursor:default}
+  .answerBtn.correct{border-color:var(--good); background:rgba(17,72,41,.9)}
+  .answerBtn.incorrect{border-color:var(--bad); background:rgba(93,19,19,.88)}
+  .feedback{
+    min-height:106px;
+    margin-top:14px;
+    padding:16px;
+    border-radius:16px;
+    background:rgba(8,21,42,.92);
+    border:1px solid #203e72;
+  }
+  .feedback strong{
+    display:block;
+    margin-bottom:8px;
+    font-size:18px;
+  }
+  .feedback.good strong{color:var(--good)}
+  .feedback.bad strong{color:var(--bad)}
+  .feedback p{
+    margin:0;
+    color:#d8e4f5;
+    line-height:1.5;
+    font-size:16px;
+  }
+  .controls{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:16px;
+  }
+  .btn{
+    appearance:none;
+    border:0;
+    border-radius:14px;
+    padding:14px 22px;
+    font-size:17px;
+    font-weight:800;
+    cursor:pointer;
+    color:#04111f;
+    background:linear-gradient(180deg, #bfe0ff, #7fb4ff);
+  }
+  .btn:disabled{opacity:.45; cursor:default}
+  .mission{
+    padding:18px 18px 20px;
+  }
+  .mission h2{
+    margin:0 0 10px;
+    font-size:20px;
+  }
+  .mission p{
+    margin:0 0 12px;
+    color:var(--muted);
+    line-height:1.45;
+  }
+  .log{
+    display:grid;
+    gap:10px;
+    max-height:560px;
+    overflow:auto;
+    padding-right:4px;
+  }
+  .logItem{
+    border:1px solid #1d3b6e;
+    background:rgba(7,20,40,.94);
+    border-radius:14px;
+    padding:12px 12px;
+    font-size:14px;
+    line-height:1.45;
+    color:#dce8fb;
+  }
+  .status{
+    margin-top:10px;
+    color:var(--accent);
+    font-weight:700;
+  }
+  .small{
+    color:var(--muted);
+    font-size:14px;
+  }
+  @media (max-width: 1080px){
+    .layout{grid-template-columns:1fr}
+    .topbar{grid-template-columns:repeat(2, minmax(0,1fr))}
+    .gameWrap{min-height:620px}
+    iframe{height:620px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="stat"><div class="label">Score</div><div class="value" id="scoreVal">0</div></div>
+    <div class="stat"><div class="label">Streak</div><div class="value" id="streakVal">0</div></div>
+    <div class="stat"><div class="label">Question</div><div class="value" id="questionVal">0/15</div></div>
+    <div class="stat"><div class="label">Status</div><div class="value" id="statusVal" style="font-size:28px;line-height:1.15;margin-top:16px;">Loading...</div></div>
+  </div>
+
+  <div class="layout">
+    <section class="panel">
+      <div class="panelHeader">
+        <h1>Jedi Power Battles Educational Wrapper</h1>
+        <p>
+          The game loads automatically. Students wait on the launch overlay until the game is ready.
+          <span class="hint">After the first <span class="hint">Alt</span>, the game starts playing. The second <span class="hint">Alt</span> begins the 15 second countdown for the first quiz.
+          Each mission run goes through all 15 assessment questions in order.
+        </p>
+      </div>
+
+      <div class="gameWrap" id="gameWrap">
+        <iframe
+          id="gameFrame"
+          title="Jedi Power Battles"
+          src="https://archive.org/embed/psx_swep1jpb"
+          allow="autoplay; fullscreen; gamepad"
+          tabindex="0"></iframe>
+
+        <div class="overlay" id="startOverlay" aria-live="polite">
+          <div class="card">
+            <div class="eyebrow">Mission Launch</div>
+            <h2 class="title" id="startTitle">Loading Jedi Power Battles...</h2>
+            <p class="sub" id="startText">
+              The game is loading now. Students cannot answer questions yet. Once the game is ready, this screen will
+              change and they can press <strong>Alt</strong> to start the first 15 second countdown.
+            </p>
+            <p class="small" id="loadState">Waiting for game frame to finish loading.</p>
+          </div>
+        </div>
+
+        <div class="overlay hidden" id="quizOverlay" aria-live="polite">
+          <div class="card">
+            <div class="eyebrow">Jedi Council Assessment</div>
+            <div class="questionMeta">
+              <span class="pill" id="metaQuestion">Question 1 of 15</span>
+              <span class="pill">15 second interval</span>
+              <span class="pill" id="metaScore">Score 0</span>
+              <span class="pill" id="metaStreak">Streak 0</span>
+            </div>
+            <div class="questionText" id="questionText"></div>
+            <div class="answers" id="answers"></div>
+            <div class="feedback" id="feedbackBox">
+              <strong>Choose your answer.</strong>
+              <p>The game is covered until you answer. After you press Continue, the overlay closes and the game refocuses automatically.</p>
+            </div>
+            <div class="controls">
+              <button class="btn" id="continueBtn" disabled>Continue</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <div class="mission">
+        <h2>Mission Console</h2>
+        <p>
+          Auto-load is on. The start overlay prevents students from answering early. First Alt enters the game. Second Alt begins the first 15 second wait.
+          Questions then appear in order until all 15 are completed.
+        </p>
+        <div class="status" id="missionStatus">Loading game and holding start overlay.</div>
+        <div class="log" id="log"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const questions = [
+  {
+    "question": "What is the primary purpose of an Individualized Education Program (IEP)?",
+    "choices": {
+      "A": "To tailor a free and appropriate public education to students with disabilities",
+      "B": "To track the physical fitness of all students",
+      "C": "To provide supports only within the PE classroom",
+      "D": "To offer support to students with temporary injuries"
+    },
+    "answer": "A",
+    "explanation": "The Force demands balance. An IEP ensures each learner receives what they need through a Free Appropriate Public Education. This is not optional. It is law, structure, and purpose."
+  },
+  {
+    "question": "During a PE class, a student receives specialized instruction, measurable goals, and formal supports documented in a legal plan. This is a:",
+    "choices": {
+      "A": "504 Plan",
+      "B": "Behavior Intervention Plan (BIP)",
+      "C": "Individualized Education Program (IEP)",
+      "D": "Least Restrictive Environment (LRE)"
+    },
+    "answer": "C",
+    "explanation": "You must recognize the signs of true structure. Specialized instruction and measurable goals define an IEP. Without them, the plan lacks power."
+  },
+  {
+    "question": "A teacher provides diagrams, verbal explanation, written instructions, and practice time when teaching a soccer pass. This best represents:",
+    "choices": {
+      "A": "Bloom’s Taxonomy",
+      "B": "Multiple Means of Action & Expression",
+      "C": "Gardner’s Multiple Intelligences",
+      "D": "VARK learning preferences"
+    },
+    "answer": "D",
+    "explanation": "A wise teacher does not rely on a single path. Like mastering multiple forms, VARK ensures all learners can access the skill through different modes."
+  },
+  {
+    "question": "Which of the following is NOT a health-related component of fitness?",
+    "choices": {
+      "A": "Muscular strength",
+      "B": "Body composition",
+      "C": "Flexibility",
+      "D": "Agility"
+    },
+    "answer": "D",
+    "explanation": "Control your knowledge. Agility sharpens performance, but it is skill-related, not health-related. Precision matters."
+  },
+  {
+    "question": "What does the SETT framework stand for?",
+    "choices": {
+      "A": "Student, Environment, Tasks, Tools",
+      "B": "Services, Equipment, Testing, Time",
+      "C": "Standards, Evaluation, Teaching, Teams",
+      "D": "School, Education, Training, Technology"
+    },
+    "answer": "A",
+    "explanation": "Before action, there must be awareness. You must understand the student, the environment, the task, and the tools. Only then can you act with clarity."
+  },
+  {
+    "question": "According to the CAST framework, the purpose of Universal Design for Learning (UDL) is to:",
+    "choices": {
+      "A": "Replace traditional grading systems",
+      "B": "Identify and teach to the average learner",
+      "C": "Design learning environments that remove barriers for all learners",
+      "D": "Create a separate curriculum for students with disabilities"
+    },
+    "answer": "C",
+    "explanation": "The Jedi do not train for the average. UDL removes barriers so all may succeed. Design with intention, and access will follow."
+  },
+  {
+    "question": "The three UDL brain networks are:",
+    "choices": {
+      "A": "Engagement, Representation, Action & Expression",
+      "B": "Motivation, Content, Testing",
+      "C": "Interest, Symbols, Physicality",
+      "D": "Recruitment, Perception, Communication"
+    },
+    "answer": "A",
+    "explanation": "To master learning, you must understand why, what, and how. Engagement, Representation, and Action guide all instruction. This is the way of balance."
+  },
+  {
+    "question": "The IDEA principle of Least Restrictive Environment (LRE) requires that:",
+    "choices": {
+      "A": "Students be placed in separate facilities",
+      "B": "Students with disabilities be educated with nondisabled peers to the maximum extent appropriate",
+      "C": "Schools provide the most expensive technology",
+      "D": "Teachers may reject students"
+    },
+    "answer": "B",
+    "explanation": "Isolation is not strength. Students must learn beside their peers whenever possible. Inclusion builds power in the system."
+  },
+  {
+    "question": "Which is an example of Multiple Means of Action & Expression in PE assessment?",
+    "choices": {
+      "A": "Posting an anchor chart",
+      "B": "Using a louder whistle",
+      "C": "Organizing groups by favorite sports",
+      "D": "Allowing exit slip, verbal explanation, or referee role"
+    },
+    "answer": "D",
+    "explanation": "There are many ways to demonstrate mastery. A wise teacher allows students to show understanding through different forms. This is how true ability is revealed."
+  },
+  {
+    "question": "Which is High-Tech assistive technology in physical education?",
+    "choices": {
+      "A": "Bowling ramps",
+      "B": "Picture icon books",
+      "C": "Beep boxes",
+      "D": "Power wheelchairs and FM systems"
+    },
+    "answer": "D",
+    "explanation": "Advanced tools extend capability. High-tech assistive technology removes barriers with precision and power. Use it wisely."
+  },
+  {
+    "question": "A student has accommodations like extended time and visual supports but does NOT receive specialized instruction. This student likely has a:",
+    "choices": {
+      "A": "Individualized Education Program (IEP)",
+      "B": "504 Plan",
+      "C": "Behavior Intervention Plan (BIP)",
+      "D": "Assistive Technology Plan"
+    },
+    "answer": "B",
+    "explanation": "Not all require full intervention. A 504 Plan grants access without specialized instruction. Know the distinction. It is critical."
+  },
+  {
+    "question": "Which of the following best represents Multiple Means of Engagement in PE?",
+    "choices": {
+      "A": "Giving all students the same drill repeatedly",
+      "B": "Allowing students to choose between activities or roles",
+      "C": "Writing directions on the board only",
+      "D": "Demonstrating a skill one time"
+    },
+    "answer": "B",
+    "explanation": "Engagement fuels effort. When students have choice, they invest. Motivation is not forced, it is cultivated."
+  },
+  {
+    "question": "A teacher modifies a basketball activity by lowering the hoop and using a larger ball so a student can successfully participate. This is an example of:",
+    "choices": {
+      "A": "Punishment",
+      "B": "Segregation",
+      "C": "Standardized instruction",
+      "D": "Task modification"
+    },
+    "answer": "D",
+    "explanation": "Adaptation is strategy, not weakness. Modify the task, and you unlock access. This is how inclusion is executed with precision."
+  },
+  {
+    "question": "Which situation BEST reflects the principle of Least Restrictive Environment (LRE)?",
+    "choices": {
+      "A": "A student is always placed in a separate adapted PE class",
+      "B": "A student is excused from PE entirely",
+      "C": "A student only observes from the sidelines",
+      "D": "A student participates in general PE with supports and modifications"
+    },
+    "answer": "D",
+    "explanation": "Do not remove a learner from the system unless absolutely necessary. Support them within it. That is the discipline of true inclusion."
+  },
+  {
+    "question": "A teacher allows a student to demonstrate understanding of a game strategy by explaining it verbally instead of writing it. This reflects:",
+    "choices": {
+      "A": "Multiple Means of Representation",
+      "B": "Multiple Means of Engagement",
+      "C": "Direct Instruction Only",
+      "D": "Multiple Means of Action & Expression"
+    },
+    "answer": "D",
+    "explanation": "Mastery is not limited to one form. When students express understanding in different ways, you see their true capability. That is how you assess with wisdom."
+  }
+];
+
+const scoreVal = document.getElementById('scoreVal');
+const streakVal = document.getElementById('streakVal');
+const questionVal = document.getElementById('questionVal');
+const statusVal = document.getElementById('statusVal');
+const missionStatus = document.getElementById('missionStatus');
+const logEl = document.getElementById('log');
+const gameWrap = document.getElementById('gameWrap');
+const gameFrame = document.getElementById('gameFrame');
+
+const startOverlay = document.getElementById('startOverlay');
+const startTitle = document.getElementById('startTitle');
+const startText = document.getElementById('startText');
+const loadState = document.getElementById('loadState');
+
+const quizOverlay = document.getElementById('quizOverlay');
+const questionText = document.getElementById('questionText');
+const answersEl = document.getElementById('answers');
+const feedbackBox = document.getElementById('feedbackBox');
+const continueBtn = document.getElementById('continueBtn');
+const metaQuestion = document.getElementById('metaQuestion');
+const metaScore = document.getElementById('metaScore');
+const metaStreak = document.getElementById('metaStreak');
+
+let gameLoaded = false;
+let armed = false;
+let altPressCount = 0;
+let enteredGame = false;
+let score = 0;
+let streak = 0;
+let qIndex = 0;
+let awaitingContinue = false;
+let timerId = null;
+let userHasAnswered = false;
+
+function addLog(text){
+  const div = document.createElement('div');
+  div.className = 'logItem';
+  div.textContent = text;
+  logEl.prepend(div);
+}
+
+function updateDashboard(){
+  scoreVal.textContent = String(score);
+  streakVal.textContent = String(streak);
+  questionVal.textContent = `${Math.min(qIndex, questions.length)}/${questions.length}`;
+  metaScore.textContent = `Score ${score}`;
+  metaStreak.textContent = `Streak ${streak}`;
+}
+
+function setStatus(text){
+  missionStatus.textContent = text;
+  statusVal.textContent = text;
+}
+
+function showReadyOverlay(){
+  startTitle.textContent = 'Game ready. Press Alt to enter game.';
+  startText.innerHTML = 'The game has loaded automatically. Students now wait here until they are ready. Press <strong>Alt</strong> once to enter the game. Press <strong>Alt</strong> a second time to begin the first 15 second countdown. No questions can appear before that.';
+  loadState.textContent = 'Ready. Waiting for first Alt to enter game.';
+}
+
+function closeStartOverlay(){
+  startOverlay.classList.add('hidden');
+}
+
+function focusGameFrame(){
+  try { gameFrame.focus({preventScroll:true}); } catch (e) {}
+  try { gameWrap.focus({preventScroll:true}); } catch (e) {}
+  setTimeout(() => { try { gameFrame.focus({preventScroll:true}); } catch (e) {} }, 40);
+  setTimeout(() => { try { gameFrame.focus({preventScroll:true}); } catch (e) {} }, 160);
+  setTimeout(() => { try { gameFrame.focus({preventScroll:true}); } catch (e) {} }, 320);
+}
+
+function scheduleNextQuestion(){
+  if (!armed || qIndex >= questions.length) return;
+  clearTimeout(timerId);
+  setStatus(`Countdown running. Question ${qIndex + 1} will appear in 15 seconds.`);
+  timerId = setTimeout(() => {
+    showQuestion();
+  }, 15000);
+}
+
+function enterGame(){
+  if (!gameLoaded || enteredGame) return;
+  enteredGame = true;
+  closeStartOverlay();
+  setStatus('Game live. Quiz timer will begin automatically after 30 seconds.');
+  addLog('First Alt pressed. Game entered. 30 second delay before quiz timer begins.');
+  focusGameFrame();
+
+  // Auto-start quiz timer after 30 seconds
+  setTimeout(() => {
+    if (!armed){
+      startMission();
+    }
+  }, 30000);
+}
+
+function startMission(){
+  if (!gameLoaded || armed) return;
+  armed = true;
+  closeStartOverlay();
+  setStatus('Quiz timer live. First question will appear in 15 seconds.');
+  addLog('Mission started with Alt. Countdown armed for Question 1.');
+  focusGameFrame();
+  scheduleNextQuestion();
+}
+
+function resetFeedback(){
+  feedbackBox.className = 'feedback';
+  feedbackBox.innerHTML = '<strong>Choose your answer.</strong><p>The game is covered until you answer. After you press Continue, the overlay closes and the game refocuses automatically.</p>';
+}
+
+function renderQuestion(){
+  const q = questions[qIndex];
+  metaQuestion.textContent = `Question ${qIndex + 1} of ${questions.length}`;
+  questionText.textContent = q.question;
+  answersEl.innerHTML = '';
+  resetFeedback();
+  continueBtn.disabled = true;
+  userHasAnswered = false;
+
+  Object.entries(q.choices).forEach(([key, text]) => {
+    const btn = document.createElement('button');
+    btn.className = 'answerBtn';
+    btn.innerHTML = `<strong>${key}.</strong> ${text}`;
+    btn.addEventListener('click', () => handleAnswer(key, btn));
+    answersEl.appendChild(btn);
+  });
+}
+
+function showQuestion(){
+  clearTimeout(timerId);
+  if (qIndex >= questions.length) {
+    showCompletion();
+    return;
+  }
+  awaitingContinue = true;
+  gameWrap.classList.add('quiz-open');
+  quizOverlay.classList.remove('hidden');
+  renderQuestion();
+  updateDashboard();
+  setStatus(`Question ${qIndex + 1} is on screen.`);
+  addLog(`Question ${qIndex + 1} opened.`);
+}
+
+function handleAnswer(choice, clickedBtn){
+  if (userHasAnswered) return;
+  userHasAnswered = true;
+  const q = questions[qIndex];
+  const allButtons = [...document.querySelectorAll('.answerBtn')];
+  allButtons.forEach(btn => btn.disabled = true);
+
+  const correctBtn = allButtons.find(btn => btn.innerText.trim().startsWith(q.answer + '.'));
+  if (correctBtn) correctBtn.classList.add('correct');
+
+  if (choice === q.answer){
+    clickedBtn.classList.add('correct');
+    streak += 1;
+    const earned = 50 + ((streak - 1) * 10);
+    score += earned;
+    feedbackBox.className = 'feedback good';
+    feedbackBox.innerHTML = `<strong>Correct. +${earned} points.</strong><p>${q.explanation}</p>`;
+    addLog(`Question ${qIndex + 1}: correct. Score +${earned}. Streak now ${streak}.`);
+  } else {
+    clickedBtn.classList.add('incorrect');
+    streak = 0;
+    feedbackBox.className = 'feedback bad';
+    feedbackBox.innerHTML = `<strong>Not quite.</strong><p>The correct answer is <strong>${q.answer}</strong>. ${q.explanation}</p>`;
+    addLog(`Question ${qIndex + 1}: incorrect. Correct answer was ${q.answer}. Streak reset.`);
+  }
+
+  updateDashboard();
+  continueBtn.disabled = false;
+  continueBtn.focus();
+}
+
+function continueFromQuestion(){
+  if (!awaitingContinue || !userHasAnswered) return;
+  awaitingContinue = false;
+  qIndex += 1;
+  updateDashboard();
+  quizOverlay.classList.add('hidden');
+  gameWrap.classList.remove('quiz-open');
+
+  if (qIndex >= questions.length){
+    showCompletion();
+    return;
+  }
+
+  setStatus(`Returning to game. Question ${qIndex + 1} will appear in 15 seconds.`);
+  focusGameFrame();
+  scheduleNextQuestion();
+}
+
+function showCompletion(){
+  clearTimeout(timerId);
+  gameWrap.classList.add('quiz-open');
+  quizOverlay.classList.remove('hidden');
+  questionText.textContent = 'Mission complete.';
+  answersEl.innerHTML = '';
+  feedbackBox.className = 'feedback good';
+  feedbackBox.innerHTML = `<strong>All 15 questions completed.</strong><p>Final score: <strong>${score}</strong>. Final streak: <strong>${streak}</strong>. Press Restart Mission to run the full question set again.</p>`;
+  metaQuestion.textContent = `Question ${questions.length} of ${questions.length}`;
+  continueBtn.disabled = false;
+  continueBtn.textContent = 'Restart Mission';
+  setStatus('Mission complete.');
+  addLog(`Mission complete. Final score ${score}.`);
+  awaitingContinue = true;
+}
+
+function restartMission(){
+  clearTimeout(timerId);
+  score = 0;
+  streak = 0;
+  qIndex = 0;
+  armed = false;
+  altPressCount = 0;
+  enteredGame = false;
+  awaitingContinue = false;
+  userHasAnswered = false;
+  continueBtn.textContent = 'Continue';
+  quizOverlay.classList.add('hidden');
+  gameWrap.classList.remove('quiz-open');
+  updateDashboard();
+  showReadyOverlay();
+  startOverlay.classList.remove('hidden');
+  setStatus('Mission reset. Waiting for first Alt to enter game.');
+  addLog('Mission reset. Ready for a new full run of all 15 questions.');
+}
+
+continueBtn.addEventListener('click', () => {
+  if (qIndex >= questions.length){
+    restartMission();
+  } else {
+    continueFromQuestion();
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Alt' && gameLoaded){
+    e.preventDefault();
+    if (!enteredGame){
+      enterGame();
+    }
+  }
+}, true);
+
+gameFrame.addEventListener('load', () => {
+  loadState.textContent = 'Game frame loaded. Finalizing launch screen.';
+  setStatus('Game frame loaded. Preparing ready screen.');
+  addLog('Archive game iframe loaded automatically.');
+  setTimeout(() => {
+    gameLoaded = true;
+    showReadyOverlay();
+    updateDashboard();
+    setStatus('Ready. Waiting for first Alt to enter game.');
+    addLog('Start overlay is now armed. First Alt enters game. Timer auto-starts after 30 seconds.');
+  }, 1500);
+});
+
+updateDashboard();
+addLog('Wrapper initialized. Auto-loading game.');
+</script>
+</body>
+</html>
